@@ -1,7 +1,7 @@
 {
   "chats": {
     "187859119": {
-      "lang": "ru",
+      "lang": "pl",
       "scope": "due",
       "days_before": 5
     },
@@ -11,5 +11,6 @@
       "days_before": 1
     }
   },
-  "offset": 788266406
+  "offset": 788266419,
+  "last_reminder_date": "2026-06-18"
 }
