@@ -28,7 +28,7 @@ import store
 import tg_alert
 import waste
 
-DAY_OPTIONS = (0, 1, 2, 3, 7)
+DAY_OPTIONS = (1, 2, 3, 4, 5, 6, 7)
 
 
 def chat_defaults(cfg):
