@@ -19,6 +19,7 @@ Run:
                            #   filtered per chat by scope/days_before
 """
 import json
+import os
 import sys
 import time
 
@@ -257,8 +258,15 @@ def main():
 
     do_push = "--push" in sys.argv
     interval = int(cfg.get("poll_seconds", "120"))
+
+    # LOOP_MINUTES > 0: long-running mode for GitHub Actions — exit after N
+    # minutes so the scheduled job ends and cron can restart it (near-continuous
+    # coverage via a concurrency lock). 0 = run forever (local).
+    loop_min = float(os.environ.get("LOOP_MINUTES", "0"))
+    deadline = (time.time() + loop_min * 60) if loop_min > 0 else None
     print(f"Bot started. Commands: /start /next /language /settings."
-          f" Broadcast: {'every ' + str(interval) + 's' if do_push else 'off'}.")
+          f" Broadcast: {'every ' + str(interval) + 's' if do_push else 'off'}."
+          f" Deadline: {str(int(loop_min)) + ' min' if deadline else 'none'}.")
 
     offset = store.get_offset()
     last_push = 0.0
@@ -283,6 +291,10 @@ def main():
                 print(f"[push] sent to {n} chat(s)")
             except Exception as e:
                 print(f"push error: {e}")
+
+        if deadline and time.time() >= deadline:
+            print("loop deadline reached — exiting for restart")
+            break
 
 
 if __name__ == "__main__":

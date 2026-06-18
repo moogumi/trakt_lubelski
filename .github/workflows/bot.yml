@@ -1,36 +1,37 @@
-name: Waste bot commands
+name: Waste bot (interactive)
 
-# Polls Telegram for incoming commands/button taps and answers them, then
-# persists state.json (chat settings + getUpdates offset) back to the repo.
-# GitHub Actions cron minimum is 5 minutes, so replies arrive within ~5 min.
+# Long-running interactive bot, siren-style: one job runs the long-poll loop for
+# ~50 minutes, and cron restarts it every 15 minutes. A concurrency lock keeps a
+# fresh run pending until the current one ends -> near-continuous coverage, so
+# button taps get answered within seconds. Free on public repos (unlimited minutes).
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 concurrency:
-  # shared with poll.yml so the two never push state.json at the same time
-  group: trakt-musor
-  cancel-in-progress: false
+  group: trakt-bot-loop
+  cancel-in-progress: false  # let the running 50-min job finish; queue the next
 
 permissions:
-  contents: write  # commit state.json back
+  contents: write  # commit state.json (chat settings + getUpdates offset) back
 
 jobs:
-  commands:
+  bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Process pending commands
+      - name: Run interactive bot (~50 min loop)
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           PYTHONIOENCODING: "utf-8"
-        run: python bot.py --once
+          LOOP_MINUTES: "50"
+        run: python bot.py
       - name: Persist state back to the repo
         if: always()
         run: |
