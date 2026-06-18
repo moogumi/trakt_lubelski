@@ -1,0 +1,5 @@
+# Адрес для опроса графика вывоза мусора.
+# address_point_id берётся из autocomplete API; для нашего адреса он уже найден.
+# Сменить адрес: python waste.py "НОВЫЙ АДРЕС"  -> взять addressPointId первого совпадения.
+address=TRAKT LUBELSKI 26 04-870 Wawer
+address_point_id=27088875

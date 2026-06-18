@@ -1,0 +1,11 @@
+# Секреты
+tg_config.txt
+
+# Состояние/логи
+*.log
+state.json
+
+# Python / Windows
+__pycache__/
+*.pyc
+_popup.ps1
