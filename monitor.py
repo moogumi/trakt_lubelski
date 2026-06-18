@@ -1,109 +1,90 @@
 #!/usr/bin/env python3
-"""Монитор графика вывоза мусора для TRAKT LUBELSKI 26 -> уведомления в Telegram.
+"""One-shot poll + broadcast (for cron / GitHub Actions).
 
-Тестовый режим (по умолчанию): на каждой итерации опрашивает сайт и присылает
-весь ближайший график по категориям — чтобы убедиться, что данные верные.
+For the interactive bot with in-chat language/settings buttons, use bot.py.
+This script just polls the site and sends the schedule to every subscriber in
+their own language, filtered by their scope / days_before settings.
 
-Использование:
-  python monitor.py                 # один опрос, печать в консоль (+отправка, если настроен TG)
-  python monitor.py --watch 120     # цикл: опрос каждые 120 сек (2 минуты)
-  python monitor.py --send          # принудительно отправлять в Telegram
-  python monitor.py --no-send       # никогда не отправлять (только консоль)
-  python monitor.py --log run.log   # дублировать вывод в файл
+Usage:
+  python monitor.py                 # one poll, print to console (+send if TG configured)
+  python monitor.py --send          # force sending to Telegram
+  python monitor.py --no-send       # console only
+  python monitor.py --watch 120     # loop every 120 s (simple local mode)
+  python monitor.py --log run.log   # also append a heartbeat to a file
 """
 import os
 import sys
 import time
 from datetime import datetime, timezone
 
+import config
+import i18n
+import store
 import tg_alert
 import waste
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CFG = os.path.join(HERE, "config.txt")
-
-DEFAULTS = {
-    "address": "TRAKT LUBELSKI 26 04-870 Wawer",
-    "address_point_id": "27088875",
-}
 
 
-def load_cfg():
-    cfg = dict(DEFAULTS)
-    if os.path.exists(CFG):
-        with open(CFG, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                k, v = line.split("=", 1)
-                cfg[k.strip()] = v.strip()
-    return cfg
+def target_chats():
+    """Subscribers from state.json; if none, fall back to the Telegram chat_id."""
+    chats = store.all_chats()
+    if chats:
+        return chats
+    tgcfg = tg_alert.load_cfg()
+    return [tgcfg["chat_id"]] if tgcfg else []
 
 
-def _plural_days(n):
-    n = abs(n)
-    if 11 <= n % 100 <= 14:
-        return "дней"
-    last = n % 10
-    if last == 1:
-        return "день"
-    if 2 <= last <= 4:
-        return "дня"
-    return "дней"
-
-
-def human_when(days):
-    if days < 0:
-        return "прошло"
-    if days == 0:
-        return "сегодня"
-    if days == 1:
-        return "завтра"
-    return f"через {days} {_plural_days(days)}"
-
-
-def format_message(address, schedule):
-    lines = [f"🗑️ <b>Вывоз мусора — {address}</b>", ""]
-    if not schedule:
-        lines.append("Нет данных в графике.")
-        return "\n".join(lines)
-    for e in schedule:
-        days = waste.days_until(e["date"])
-        lines.append(f"{e['emoji']} <b>{e['name']}</b>\n     {e['date']} — {human_when(days)}")
-    return "\n".join(lines)
+def chat_defaults(cfg):
+    return {
+        "lang": cfg["lang"],
+        "scope": cfg["notify_scope"],
+        "days_before": int(cfg["notify_days_before"]),
+    }
 
 
 def poll(cfg, do_send, logfile=None):
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    apid = cfg["address_point_id"]
-    schedule = waste.fetch_schedule(apid)
-    msg = format_message(cfg["address"], schedule)
+    schedule = waste.fetch_schedule(cfg["address_point_id"])
 
-    heartbeat = f"[{stamp}] опрошено: {len(schedule)} категорий"
-    print(heartbeat)
-    print(msg)
+    # console preview uses the default language and the full schedule
+    print(f"[{stamp}] polled: {len(schedule)} categories")
+    print(i18n.format_schedule(cfg["address"], schedule, cfg["lang"]))
     print("-" * 40)
 
+    sent = 0
     if do_send:
-        ok, err = tg_alert.send(msg)
-        status = "TG: отправлено" if ok else f"TG: ОШИБКА — {err}"
-        print(status)
+        defaults = chat_defaults(cfg)
+        for chat in target_chats():
+            lang = store.get_opt(chat, "lang", defaults["lang"])
+            scope = store.get_opt(chat, "scope", defaults["scope"])
+            days = store.get_opt(chat, "days_before", defaults["days_before"])
+            items = i18n.select(schedule, scope, days)
+            if scope == "due" and not items:
+                continue  # nothing due — stay quiet
+            res = tg_alert.call("sendMessage", {
+                "chat_id": chat,
+                "text": i18n.format_schedule(cfg["address"], items, lang),
+                "parse_mode": "HTML",
+                "disable_web_page_preview": "true",
+            })
+            if res and res.get("ok"):
+                sent += 1
+        status = f"TG: sent to {sent} chat(s)"
     else:
-        status = "TG: пропущено (нет конфига или --no-send)"
+        status = "TG: skipped (no config or --no-send)"
+    print(status)
 
     if logfile:
         with open(logfile, "a", encoding="utf-8") as f:
-            f.write(heartbeat + "  " + status + "\n")
+            f.write(f"[{stamp}] categories={len(schedule)}  {status}\n")
 
 
 def main():
     args = sys.argv[1:]
-    cfg = load_cfg()
+    cfg = config.load()
 
-    watch = None
-    if "--watch" in args:
-        watch = int(args[args.index("--watch") + 1])
+    watch = int(args[args.index("--watch") + 1]) if "--watch" in args else None
 
     logfile = None
     if "--log" in args:
@@ -111,7 +92,6 @@ def main():
         if not os.path.isabs(logfile):
             logfile = os.path.join(HERE, logfile)
 
-    # отправлять ли в Telegram: по умолчанию — да, если конфиг настроен
     if "--no-send" in args:
         do_send = False
     elif "--send" in args:
@@ -120,12 +100,12 @@ def main():
         do_send = tg_alert.load_cfg() is not None
 
     if watch:
-        print(f"Слежу каждые {watch}с за графиком «{cfg['address']}». Ctrl-C для остановки.")
+        print(f"Watching every {watch}s: '{cfg['address']}'. Ctrl-C to stop.")
         while True:
             try:
                 poll(cfg, do_send, logfile)
             except Exception as e:
-                err = f"[{datetime.now(timezone.utc).isoformat(timespec='seconds')}] ОШИБКА: {e}"
+                err = f"[{datetime.now(timezone.utc).isoformat(timespec='seconds')}] ERROR: {e}"
                 print(err)
                 if logfile:
                     with open(logfile, "a", encoding="utf-8") as f:

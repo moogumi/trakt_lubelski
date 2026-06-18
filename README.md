@@ -1,65 +1,79 @@
-# Бот вывоза мусора — TRAKT LUBELSKI 26
+# Waste-collection bot — TRAKT LUBELSKI 26
 
-Telegram-бот, который опрашивает [warszawa19115.pl](https://warszawa19115.pl/harmonogramy-wywozu-odpadow)
-и присылает график вывоза мусора по категориям для адреса **TRAKT LUBELSKI 26 04-870 Wawer**.
+Telegram bot that polls [warszawa19115.pl](https://warszawa19115.pl/harmonogramy-wywozu-odpadow)
+and sends the waste-collection schedule by category for **TRAKT LUBELSKI 26 04-870 Wawer**.
 
-Без внешних зависимостей — только стандартная библиотека Python 3 (стиль проекта `siren`).
+No third-party dependencies — Python 3 stdlib only (modeled on the `siren` project).
 
-## Файлы
+## Files
 
-| Файл | Назначение |
-|------|-----------|
-| `waste.py` | Запрос к API сайта: адрес → `addressPointId` → график (`harmonogramyZ`). |
-| `tg_alert.py` | Отправка сообщений в Telegram (urllib, без библиотек). |
-| `monitor.py` | Главный цикл: опрос → форматирование → отправка. |
-| `config.txt` | Адрес и `address_point_id` (закоммичен, не секрет). |
-| `tg_config.txt` | Токен бота и `chat_id` (в `.gitignore`). |
-| `start_monitor.bat` / `stop_monitor.bat` | Запуск/остановка фонового монитора на Windows. |
-| `.github/workflows/poll.yml` | Облачный запуск через GitHub Actions (после теста). |
+| File | Purpose |
+|------|---------|
+| `waste.py` | Site API: address → `addressPointId` → schedule (`harmonogramyZ`). |
+| `i18n.py` | Localization (en/ru/uk/pl), message formatting, schedule filtering. |
+| `tg_alert.py` | Send Telegram messages (urllib, no libraries). |
+| `bot.py` | Interactive bot: `/start`, `/next`, `/language`, `/settings` (+ `--push` broadcast). |
+| `monitor.py` | One-shot poll + broadcast for cron / GitHub Actions. |
+| `config.py` / `store.py` | Config loader and per-chat state (`state.json`). |
+| `config.txt` | Address, default language and notification settings (committed). |
+| `tg_config.txt` | Bot token and chat_id (gitignored). |
+| `start_monitor.bat` / `stop_monitor.bat` | Start/stop the background bot on Windows. |
+| `.github/workflows/poll.yml` | Cloud run via GitHub Actions (after testing). |
 
-## Категории мусора
+## Waste categories
 
-| Код | Категория | |
-|-----|-----------|--|
-| OP | Папир (бумага/картон) | 🟦 |
-| OS | Стекло | 🟩 |
-| MT | Металл и пластик | 🟨 |
-| BK | Био (кухонные отходы) | 🟫 |
-| OZ | Зелёные отходы | 🌿 |
-| ZM | Смешанные отходы | ⬛ |
-| WG | Крупногабаритные | 🛋️ |
+| Code | Category | |
+|------|----------|--|
+| OP | Paper | 📄 |
+| OS | Glass | 🍾 |
+| MT | Metals & plastics | 🥫 |
+| BK | Bio (kitchen) | 🍎 |
+| OZ | Green waste | 🌳 |
+| ZM | Mixed waste | 🗑️ |
+| WG | Bulky waste | 🛋️ |
 
-## Настройка Telegram
+## Telegram setup
 
-1. В Telegram напиши [@BotFather](https://t.me/BotFather) → `/newbot` → получи **токен**.
-2. Скопируй шаблон: `copy tg_config.example.txt tg_config.txt`, впиши `bot_token`.
-3. Напиши своему боту любое сообщение.
-4. Узнай `chat_id`: `python tg_alert.py` — он напечатает chat_id. Впиши его в `tg_config.txt`.
-5. Проверка: `python tg_alert.py` — должно прийти тестовое сообщение.
+1. In Telegram message [@BotFather](https://t.me/BotFather) → `/newbot` → get the **token**.
+2. Copy the template: `copy tg_config.example.txt tg_config.txt`, put in `bot_token`.
+3. Send your bot any message.
+4. Find `chat_id`: `python tg_alert.py` — it prints the chat_id. Put it in `tg_config.txt`.
+5. Verify: `python tg_alert.py` — a test message should arrive.
 
-## Запуск (тестовый режим — каждые 2 минуты)
+## In-bot commands
+
+- `/start`, `/help` — greeting and command list
+- `/language` — pick language (EN / RU / UK / PL), saved per chat
+- `/settings` — notification settings:
+  - **scope**: `All upcoming` or `Only due`
+  - **days before**: how many days ahead counts as "due"
+- `/next` — send the full schedule right now
+
+## Run (test mode — every 2 minutes)
 
 ```
 start_monitor.bat
 ```
 
-Каждые 2 минуты бот опрашивает сайт и присылает весь ближайший график. Остановить — `stop_monitor.bat`.
+Runs `bot.py --push`: answers commands and broadcasts the schedule every 2 minutes.
+Stop with `stop_monitor.bat`.
 
-Разовый опрос в консоль (без отправки):
+One-off poll to console (no sending):
 
 ```
 python monitor.py --no-send
 ```
 
-## Смена адреса
+## Change address
 
 ```
-python waste.py "НОВЫЙ АДРЕС"
+python waste.py "NEW ADDRESS"
 ```
 
-Взять `addressPointId` первого совпадения и вписать в `config.txt`.
+Take the `addressPointId` of the first match and put it in `config.txt`.
 
-## Облачный запуск (после теста)
+## Cloud run (after testing)
 
-В GitHub: **Settings → Secrets and variables → Actions** добавить `TG_BOT_TOKEN` и `TG_CHAT_ID`.
-Workflow `poll.yml` запускается по расписанию (GitHub Actions: минимум каждые 5 минут).
+In GitHub: **Settings → Secrets and variables → Actions** add `TG_BOT_TOKEN` and `TG_CHAT_ID`.
+The `poll.yml` workflow runs on a schedule (GitHub Actions: minimum every 5 minutes) and
+sends to every subscriber, each in their own language and notification settings.

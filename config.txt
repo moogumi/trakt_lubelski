@@ -1,5 +1,21 @@
-# Адрес для опроса графика вывоза мусора.
-# address_point_id берётся из autocomplete API; для нашего адреса он уже найден.
-# Сменить адрес: python waste.py "НОВЫЙ АДРЕС"  -> взять addressPointId первого совпадения.
+# Address and bot settings.
+# address_point_id comes from the autocomplete API; ours is already resolved.
+# To change address: python waste.py "NEW ADDRESS"  -> take addressPointId of the first match.
 address=TRAKT LUBELSKI 26 04-870 Wawer
 address_point_id=27088875
+
+# Default language for new chats: en | ru | uk | pl
+# (each chat can change its own language with /language in the bot)
+lang=en
+
+# Test-broadcast interval for bot.py --push (seconds)
+poll_seconds=120
+
+# What a notification shows by default:
+#   all = the whole upcoming schedule
+#   due = only pickups within notify_days_before days
+# (each chat can change this with /settings in the bot)
+notify_scope=all
+
+# A pickup counts as "due" within this many days (used when notify_scope=due)
+notify_days_before=1

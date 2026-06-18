@@ -1,11 +1,11 @@
-name: Музор TRAKT LUBELSKI
+name: Waste TRAKT LUBELSKI
 
-# Для облачного запуска (после теста). Токен и chat_id — в Secrets репозитория:
+# Cloud run (after local testing). Token and chat_id live in repo Secrets:
 #   Settings -> Secrets and variables -> Actions:  TG_BOT_TOKEN, TG_CHAT_ID
 on:
   schedule:
-    # ТЕСТ: каждые 5 минут — это минимально допустимый интервал в GitHub Actions
-    # (каждые 2 минуты cron в Actions не поддерживает; локально используем start_monitor.bat).
+    # Every 5 minutes — the smallest interval GitHub Actions allows
+    # (cron cannot do every 2 minutes; use start_monitor.bat locally for that).
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Опрос графика + уведомление
+      - name: Poll schedule and notify
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}

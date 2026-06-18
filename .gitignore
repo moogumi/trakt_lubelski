@@ -1,9 +1,10 @@
-# Секреты
+# Secrets
 tg_config.txt
 
-# Состояние/логи
+# State / logs
 *.log
 state.json
+state.json.tmp
 
 # Python / Windows
 __pycache__/

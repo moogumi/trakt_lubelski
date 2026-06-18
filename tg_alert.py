@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Отправка сообщений в Telegram — только стандартная библиотека (как в siren).
+"""Send Telegram messages — stdlib only (siren-style).
 
-Конфиг берётся из переменных окружения TG_BOT_TOKEN / TG_CHAT_ID (для облака)
-или из файла tg_config.txt рядом со скриптом (для локального запуска).
+Config comes from env vars TG_BOT_TOKEN / TG_CHAT_ID (for the cloud) or from
+tg_config.txt next to the script (for local runs).
 
-Запусти  python tg_alert.py  чтобы:
-  - если chat_id не задан — увидеть chat_id всех, кто написал боту;
-  - если задан — получить тестовое сообщение.
+Run  python tg_alert.py  to:
+  - if chat_id is not set — print the chat_id of everyone who messaged the bot;
+  - if it is set — send a test message.
 """
 import json
 import os
@@ -19,7 +19,7 @@ PLACEHOLDERS = {"", "PASTE_BOT_TOKEN_HERE", "PASTE_CHAT_ID_HERE"}
 
 
 def load_cfg():
-    """Возвращает {'bot_token','chat_id'} или None, если не настроено."""
+    """Return {'bot_token', 'chat_id'} or None if not configured."""
     token = os.environ.get("TG_BOT_TOKEN", "").strip()
     chat = os.environ.get("TG_CHAT_ID", "").strip()
     if token and chat:
@@ -41,7 +41,7 @@ def load_cfg():
     return {"bot_token": token, "chat_id": chat}
 
 
-def _api(token, method, params, timeout=30):
+def _api(token, method, params, timeout=40):
     url = API.format(token=token, method=method)
     data = urllib.parse.urlencode(params).encode()
     req = urllib.request.Request(url, data=data)
@@ -49,11 +49,19 @@ def _api(token, method, params, timeout=30):
         return json.loads(r.read().decode())
 
 
-def send(text, cfg=None):
-    """Отправить сообщение. Возвращает (ok: bool, err: str|None)."""
+def call(method, params, cfg=None, timeout=40):
+    """Low-level Bot API call. Returns parsed JSON, or None if not configured."""
     cfg = cfg or load_cfg()
     if not cfg:
-        return False, "telegram не настроен (нет tg_config.txt или TG_BOT_TOKEN/TG_CHAT_ID)"
+        return None
+    return _api(cfg["bot_token"], method, params, timeout=timeout)
+
+
+def send(text, cfg=None):
+    """Send a message. Returns (ok: bool, err: str|None)."""
+    cfg = cfg or load_cfg()
+    if not cfg:
+        return False, "telegram not configured (no tg_config.txt or TG_BOT_TOKEN/TG_CHAT_ID)"
     try:
         res = _api(cfg["bot_token"], "sendMessage", {
             "chat_id": cfg["chat_id"],
@@ -69,11 +77,11 @@ def send(text, cfg=None):
 
 
 def _discover_chat_ids(token):
-    """Печатает chat_id всех, кто недавно писал боту (через getUpdates)."""
+    """Print the chat_id of everyone who recently messaged the bot (via getUpdates)."""
     try:
         res = _api(token, "getUpdates", {})
     except Exception as e:
-        print(f"Ошибка getUpdates: {e}")
+        print(f"getUpdates error: {e}")
         return
     seen = {}
     for u in res.get("result", []):
@@ -82,9 +90,9 @@ def _discover_chat_ids(token):
         if chat.get("id"):
             seen[chat["id"]] = chat.get("username") or chat.get("first_name") or "?"
     if not seen:
-        print("Никто ещё не писал боту. Напиши боту любое сообщение и запусти снова.")
+        print("Nobody has messaged the bot yet. Send it any message and run again.")
     else:
-        print("Найденные chat_id (впиши нужный в tg_config.txt):")
+        print("Found chat_id(s) (put the right one in tg_config.txt):")
         for cid, who in seen.items():
             print(f"  chat_id={cid}   ({who})")
 
@@ -92,7 +100,7 @@ def _discover_chat_ids(token):
 if __name__ == "__main__":
     cfg = load_cfg()
     if not cfg:
-        # пробуем хотя бы токен, чтобы показать chat_id
+        # try at least the token so we can print chat_id
         token = os.environ.get("TG_BOT_TOKEN", "").strip()
         if not token and os.path.exists(CFG):
             with open(CFG, encoding="utf-8") as f:
@@ -102,7 +110,8 @@ if __name__ == "__main__":
         if token and token not in PLACEHOLDERS:
             _discover_chat_ids(token)
         else:
-            print("Впиши bot_token в tg_config.txt (от @BotFather) и запусти снова.")
+            print("Put bot_token in tg_config.txt (from @BotFather) and run again.")
     else:
-        ok, err = send("✅ Тест: бот вывоза мусора TRAKT LUBELSKI 26 настроен.", cfg)
-        print("Отправлено." if ok else f"Ошибка: {err}")
+        import i18n
+        ok, err = send(i18n.t("test_ok", i18n.load_lang()), cfg)
+        print("Sent." if ok else f"Error: {err}")

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Получение графика вывоза мусора с warszawa19115.pl.
+"""Fetch the waste-collection schedule from warszawa19115.pl.
 
-Работает по той же AJAX-ручке портала Liferay, что использует сам сайт:
-  1) autocompleteResource — превращает текстовый адрес в addressPointId;
-  2) ajaxResource         — по addressPointId отдаёт календарь (harmonogramyZ).
+Uses the same Liferay portlet AJAX endpoint the site itself calls:
+  1) autocompleteResource — turn a text address into an addressPointId;
+  2) ajaxResource         — return the calendar (harmonogramyZ) for that id.
 
-Без внешних зависимостей — только стандартная библиотека (urllib + cookiejar),
-в стиле проекта siren.
+No third-party dependencies — stdlib only (urllib + cookiejar), siren-style.
 """
 import http.cookiejar
 import json
@@ -17,26 +16,14 @@ from datetime import date, datetime
 OC_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
 PID = "portalCKMjunkschedules_WAR_portalCKMjunkschedulesportlet_INSTANCE_o5AIb2mimbRJ"
 
-# id_frakcja -> (человекочитаемое имя, эмодзи / цвет контейнера)
-FRAKCJE = {
-    "OP": ("Папир (бумага/картон)", "🟦"),
-    "OS": ("Стекло", "🟩"),
-    "MT": ("Металл и пластик", "🟨"),
-    "BK": ("Био (кухонные отходы)", "🟫"),
-    "OZ": ("Зелёные отходы", "🌿"),
-    "BG": ("Био (ресторанное)", "🍽️"),
-    "ZM": ("Смешанные отходы", "⬛"),
-    "WG": ("Крупногабаритные", "🛋️"),
-}
-
-# Дата-заглушка «нет в графике» в ответе API.
+# Placeholder date meaning "not in the schedule".
 NO_DATE = "1900-01-01"
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) trakt-lubelski-bot/1.0"
 
 
 def _opener():
-    """Opener с хранилищем cookie — портал требует session-cookie между запросами."""
+    """Opener with a cookie jar — the portal needs a session cookie between calls."""
     jar = http.cookiejar.CookieJar()
     return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
@@ -49,9 +36,9 @@ def _get_json(opener, params, timeout=30):
 
 
 def resolve_address(address, timeout=30):
-    """Адрес-строка -> список (fullName, addressPointId). Первый — самый релевантный."""
+    """Address string -> list of (fullName, addressPointId). First is the best match."""
     opener = _opener()
-    # прогреваем сессию (cookie)
+    # warm up the session (cookie)
     opener.open(urllib.request.Request(OC_URL, headers={"User-Agent": UA}), timeout=timeout).read()
     data = _get_json(opener, {
         "p_p_id": PID,
@@ -63,9 +50,10 @@ def resolve_address(address, timeout=30):
 
 
 def fetch_schedule(address_point_id, timeout=30):
-    """addressPointId -> список словарей {date, id, name, emoji}, отсортированный по дате.
+    """addressPointId -> list of {date, code, raw_name} dicts, sorted by date.
 
-    Записи с датой-заглушкой 1900-01-01 (нет в графике) отбрасываются.
+    `code` is id_frakcja (OP/OS/MT/...); name localization happens in the view layer.
+    Entries with the 1900-01-01 placeholder (not scheduled) are dropped.
     """
     opener = _opener()
     opener.open(urllib.request.Request(OC_URL, headers={"User-Agent": UA}), timeout=timeout).read()
@@ -77,7 +65,7 @@ def fetch_schedule(address_point_id, timeout=30):
     }, timeout=timeout)
 
     if not data or "harmonogramyZ" not in data[0]:
-        raise ValueError("Неожиданный ответ API: нет harmonogramyZ")
+        raise ValueError("Unexpected API response: no harmonogramyZ")
 
     out = []
     for block in data:
@@ -87,12 +75,10 @@ def fetch_schedule(address_point_id, timeout=30):
                 continue
             fr = e.get("frakcja") or {}
             code = fr.get("id_frakcja", "?")
-            name, emoji = FRAKCJE.get(code, (fr.get("nazwa", code), "🗑️"))
             out.append({
                 "date": d,
                 "code": code,
-                "name": name,
-                "emoji": emoji,
+                "raw_name": fr.get("nazwa", code),
             })
     out.sort(key=lambda x: x["date"])
     return out
@@ -105,13 +91,17 @@ def days_until(d_str, today=None):
 
 if __name__ == "__main__":
     import sys
+
+    import i18n
     addr = sys.argv[1] if len(sys.argv) > 1 else "TRAKT LUBELSKI 26"
+    lang = sys.argv[2] if len(sys.argv) > 2 else i18n.load_lang()
     matches = resolve_address(addr)
-    print("Совпадения адреса:")
+    print("Address matches:")
     for full, apid in matches[:5]:
         print(f"  {apid}  {full}")
     if matches:
         apid = matches[0][1]
-        print(f"\nГрафик для addressPointId={apid}:")
+        print(f"\nSchedule for addressPointId={apid} (lang={lang}):")
         for e in fetch_schedule(apid):
-            print(f"  {e['date']}  {e['emoji']} {e['name']}  (через {days_until(e['date'])} дн.)")
+            print(f"  {e['date']}  {i18n.emoji(e['code'])} {i18n.category(e['code'], lang)}"
+                  f"  ({i18n.when(days_until(e['date']), lang)})")
