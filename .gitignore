@@ -1,9 +1,11 @@
 # Secrets
 tg_config.txt
 
-# State / logs
+# Logs
 *.log
-state.json
+
+# state.json IS committed (GitHub Actions persists chat settings + getUpdates
+# offset between runs); only the temp file is ignored.
 state.json.tmp
 
 # Python / Windows

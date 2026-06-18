@@ -239,6 +239,22 @@ def main():
         {"command": "settings", "description": "Notifications / Powiadomienia"},
     ])})
 
+    # --once: drain pending updates once and exit (for GitHub Actions polling)
+    if "--once" in sys.argv:
+        offset = store.get_offset()
+        res = tg("getUpdates", {"offset": offset, "timeout": 0})
+        n = 0
+        for u in (res or {}).get("result", []):
+            offset = u["update_id"] + 1
+            store.set_offset(offset)
+            try:
+                handle_update(u, cfg, tg)
+                n += 1
+            except Exception as e:
+                print(f"handle error: {e}")
+        print(f"[once] processed {n} update(s)")
+        return
+
     do_push = "--push" in sys.argv
     interval = int(cfg.get("poll_seconds", "120"))
     print(f"Bot started. Commands: /start /next /language /settings."
