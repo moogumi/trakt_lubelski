@@ -1,10 +1,15 @@
 {
   "chats": {
     "187859119": {
+      "lang": "ru",
+      "scope": "due",
+      "days_before": 5
+    },
+    "436862239": {
       "lang": "pl",
       "scope": "due",
       "days_before": 1
     }
   },
-  "offset": 788266364
+  "offset": 788266406
 }
