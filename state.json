@@ -9,8 +9,13 @@
       "lang": "pl",
       "scope": "due",
       "days_before": 1
+    },
+    "872674124": {
+      "lang": "pl",
+      "scope": "due",
+      "days_before": 1
     }
   },
-  "offset": 788266419,
+  "offset": 788266424,
   "last_reminder_date": "2026-06-18"
 }
