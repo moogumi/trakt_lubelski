@@ -60,3 +60,14 @@ def set_offset(offset):
     d = _load()
     d["offset"] = offset
     _save(d)
+
+
+def get_meta(key, default=None):
+    """Top-level state value (e.g. last_reminder_date), not tied to a chat."""
+    return _load().get(key, default)
+
+
+def set_meta(key, value):
+    d = _load()
+    d[key] = value
+    _save(d)

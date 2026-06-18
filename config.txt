@@ -18,6 +18,10 @@ poll_seconds=120
 notify_scope=due
 
 # A pickup counts as "due" within this many days (used when notify_scope=due).
-# 1 = remind the day before. The cloud cron runs daily but only sends when
-# something is due, so you effectively get one reminder the evening before.
+# 1 = remind the day before. The reminder is sent only when something is due,
+# so you effectively get one reminder the evening before.
 notify_days_before=1
+
+# Daily reminder time, HH:MM, Warsaw time. The always-on bot (bot.yml) sends it
+# once per day at/after this time — reliable even though GitHub cron is flaky.
+reminder_time=19:30

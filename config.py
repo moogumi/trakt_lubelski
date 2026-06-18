@@ -12,6 +12,7 @@ DEFAULTS = {
     "poll_seconds": "120",        # test-broadcast interval (seconds)
     "notify_scope": "all",        # "all" upcoming or "due" (within notify_days_before)
     "notify_days_before": "1",    # consider a pickup "due" within this many days
+    "reminder_time": "19:30",     # daily reminder HH:MM, Warsaw time (sent by bot.py loop)
 }
 
 

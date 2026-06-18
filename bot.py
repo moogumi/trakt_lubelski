@@ -22,6 +22,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 
 import config
 import i18n
@@ -198,6 +199,34 @@ def handle_update(u, cfg, tg):
 
 # ---------- broadcast ----------
 
+def warsaw_now():
+    """Current time in Europe/Warsaw (handles DST); falls back to CEST (UTC+2)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Warsaw"))
+    except Exception:
+        return datetime.now(timezone.utc) + timedelta(hours=2)
+
+
+def maybe_send_daily(cfg, tg):
+    """Send the daily reminder once per day at/after reminder_hour (Warsaw time).
+
+    Reliable even though GitHub cron is flaky: as soon as a bot job is alive
+    past the hour and today's reminder hasn't gone out, it sends. Deduped by
+    the Warsaw date stored in state.json.
+    """
+    hh, mm = (int(x) for x in cfg.get("reminder_time", "19:30").split(":"))
+    now = warsaw_now()
+    if (now.hour, now.minute) < (hh, mm):
+        return
+    today = now.strftime("%Y-%m-%d")
+    if store.get_meta("last_reminder_date") == today:
+        return
+    n = push_all(cfg, tg)
+    store.set_meta("last_reminder_date", today)
+    print(f"[daily] reminder sent to {n} chat(s) for {today}")
+
+
 def push_all(cfg, tg):
     sched = waste.fetch_schedule(cfg["address_point_id"])
     chats = store.all_chats()
@@ -291,6 +320,12 @@ def main():
                 print(f"[push] sent to {n} chat(s)")
             except Exception as e:
                 print(f"push error: {e}")
+
+        # reliable daily reminder, independent of GitHub cron timing
+        try:
+            maybe_send_daily(cfg, tg)
+        except Exception as e:
+            print(f"daily error: {e}")
 
         if deadline and time.time() >= deadline:
             print("loop deadline reached — exiting for restart")
