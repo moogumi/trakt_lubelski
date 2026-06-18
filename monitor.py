@@ -11,6 +11,8 @@ Usage:
   python monitor.py --no-send       # console only
   python monitor.py --watch 120     # loop every 120 s (simple local mode)
   python monitor.py --log run.log   # also append a heartbeat to a file
+  python monitor.py --scope due --days 1   # override scope/days for this run
+                                           # (production cron: only tomorrow's pickups)
 """
 import os
 import sys
@@ -43,7 +45,7 @@ def chat_defaults(cfg):
     }
 
 
-def poll(cfg, do_send, logfile=None):
+def poll(cfg, do_send, logfile=None, scope_override=None, days_override=None):
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     schedule = waste.fetch_schedule(cfg["address_point_id"])
 
@@ -57,8 +59,8 @@ def poll(cfg, do_send, logfile=None):
         defaults = chat_defaults(cfg)
         for chat in target_chats():
             lang = store.get_opt(chat, "lang", defaults["lang"])
-            scope = store.get_opt(chat, "scope", defaults["scope"])
-            days = store.get_opt(chat, "days_before", defaults["days_before"])
+            scope = scope_override or store.get_opt(chat, "scope", defaults["scope"])
+            days = days_override if days_override is not None else store.get_opt(chat, "days_before", defaults["days_before"])
             items = i18n.select(schedule, scope, days)
             if scope == "due" and not items:
                 continue  # nothing due — stay quiet
@@ -99,11 +101,14 @@ def main():
     else:
         do_send = tg_alert.load_cfg() is not None
 
+    scope_override = args[args.index("--scope") + 1] if "--scope" in args else None
+    days_override = int(args[args.index("--days") + 1]) if "--days" in args else None
+
     if watch:
         print(f"Watching every {watch}s: '{cfg['address']}'. Ctrl-C to stop.")
         while True:
             try:
-                poll(cfg, do_send, logfile)
+                poll(cfg, do_send, logfile, scope_override, days_override)
             except Exception as e:
                 err = f"[{datetime.now(timezone.utc).isoformat(timespec='seconds')}] ERROR: {e}"
                 print(err)
@@ -112,7 +117,7 @@ def main():
                         f.write(err + "\n")
             time.sleep(watch)
     else:
-        poll(cfg, do_send, logfile)
+        poll(cfg, do_send, logfile, scope_override, days_override)
 
 
 if __name__ == "__main__":

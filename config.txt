@@ -4,9 +4,9 @@
 address=TRAKT LUBELSKI 26 04-870 Wawer
 address_point_id=27088875
 
-# Default language for new chats: en | ru | uk | pl
-# (each chat can change its own language with /language in the bot)
-lang=en
+# Default language for new chats AND for the cloud reminder: en | ru | uk | pl
+# (each chat can change its own language with /language in the running bot)
+lang=pl
 
 # Test-broadcast interval for bot.py --push (seconds)
 poll_seconds=120
@@ -14,8 +14,10 @@ poll_seconds=120
 # What a notification shows by default:
 #   all = the whole upcoming schedule
 #   due = only pickups within notify_days_before days
-# (each chat can change this with /settings in the bot)
-notify_scope=all
+# (each chat can change this with /settings in the running bot)
+notify_scope=due
 
-# A pickup counts as "due" within this many days (used when notify_scope=due)
+# A pickup counts as "due" within this many days (used when notify_scope=due).
+# 1 = remind the day before. The cloud cron runs daily but only sends when
+# something is due, so you effectively get one reminder the evening before.
 notify_days_before=1

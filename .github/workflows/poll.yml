@@ -4,10 +4,10 @@ name: Waste TRAKT LUBELSKI
 #   Settings -> Secrets and variables -> Actions:  TG_BOT_TOKEN, TG_CHAT_ID
 on:
   schedule:
-    # Every 5 minutes — the smallest interval GitHub Actions allows
-    # (cron cannot do every 2 minutes; use start_monitor.bat locally for that).
-    - cron: "*/5 * * * *"
-  workflow_dispatch:
+    # Daily reminder about the next day's pickups.
+    # 17:00 UTC = 19:00 Warsaw (CEST). Adjust if needed.
+    - cron: "0 17 * * *"
+  workflow_dispatch:  # manual "Run workflow" button for testing
 
 concurrency:
   group: trakt-musor
@@ -23,6 +23,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Poll schedule and notify
+        # Uses config.txt (notify_scope=due, notify_days_before=1, lang=pl).
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}

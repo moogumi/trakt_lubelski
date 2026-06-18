@@ -45,6 +45,17 @@ def opt(chat, key, cfg):
 
 # ---------- keyboards ----------
 
+def main_keyboard(lang):
+    """Persistent reply keyboard shown at the bottom of the chat."""
+    return {
+        "keyboard": [
+            [{"text": i18n.t("btn_schedule", lang)}],
+            [{"text": i18n.t("btn_language", lang)}, {"text": i18n.t("btn_settings", lang)}],
+        ],
+        "resize_keyboard": True,
+    }
+
+
 def lang_keyboard():
     btns = [{"text": name, "callback_data": "setlang:" + code}
             for code, name in i18n.LANG_NAMES.items()]
@@ -130,7 +141,7 @@ def handle_callback(cq, cfg, tg):
         code = i18n.norm(data.split(":", 1)[1])
         store.set_opt(chat, "lang", code)
         tg("answerCallbackQuery", {"callback_query_id": cq["id"]})
-        send(tg, chat, i18n.t("lang_set", code))
+        send(tg, chat, i18n.t("lang_set", code), reply_markup=main_keyboard(code))
         send(tg, chat, full_schedule_text(cfg, code))
 
     elif data.startswith("setscope:"):
@@ -155,21 +166,23 @@ def handle_message(msg, cfg, tg):
         return
     store.subscribe(chat, chat_defaults(cfg))
     lang = opt(chat, "lang", cfg)
-    text = (msg.get("text") or "").strip().lower()
+    raw = (msg.get("text") or "").strip()
+    text = raw.lower()
+    action = i18n.action_for(raw)  # tapped reply-keyboard button (any language)
 
     if text.startswith("/start"):
-        send(tg, chat, i18n.t("welcome", lang))
+        send(tg, chat, i18n.t("welcome", lang), reply_markup=main_keyboard(lang))
         send(tg, chat, i18n.t("choose_lang", lang), reply_markup=lang_keyboard())
-    elif text.startswith("/lang") or text.startswith("/language"):
+    elif action == "language" or text.startswith("/lang") or text.startswith("/language"):
         send(tg, chat, i18n.t("choose_lang", lang), reply_markup=lang_keyboard())
-    elif text.startswith("/settings"):
+    elif action == "settings" or text.startswith("/settings"):
         scope = opt(chat, "scope", cfg)
         days = opt(chat, "days_before", cfg)
         send(tg, chat, settings_text(lang, scope, days), reply_markup=settings_keyboard(lang, scope, days))
-    elif text.startswith("/next") or text.startswith("/schedule"):
-        send(tg, chat, full_schedule_text(cfg, lang))
+    elif action == "schedule" or text.startswith("/next") or text.startswith("/schedule"):
+        send(tg, chat, full_schedule_text(cfg, lang), reply_markup=main_keyboard(lang))
     else:  # /help and any other text
-        send(tg, chat, i18n.t("welcome", lang))
+        send(tg, chat, i18n.t("welcome", lang), reply_markup=main_keyboard(lang))
 
 
 def handle_update(u, cfg, tg):
@@ -218,6 +231,13 @@ def main():
         except Exception as e:
             print(f"TG {method} error: {e}")
             return None
+
+    # populate the "/" menu in Telegram clients
+    tg("setMyCommands", {"commands": json.dumps([
+        {"command": "next", "description": "Schedule / Harmonogram"},
+        {"command": "language", "description": "Language / Język"},
+        {"command": "settings", "description": "Notifications / Powiadomienia"},
+    ])})
 
     do_push = "--push" in sys.argv
     interval = int(cfg.get("poll_seconds", "120"))

@@ -18,7 +18,7 @@ LANG_NAMES = {
 EMOJI = {
     "OP": "📄",   # paper
     "OS": "🍾",   # glass
-    "MT": "🥫",   # metals & plastics
+    "MT": "🧴",   # plastic
     "BK": "🍎",   # bio (kitchen)
     "OZ": "🌳",   # green waste
     "BG": "🍽️",   # bio (restaurant)
@@ -26,16 +26,16 @@ EMOJI = {
     "WG": "🛋️",   # bulky
 }
 
-# Category names keyed by id_frakcja.
+# Category names keyed by id_frakcja. One word per language.
 CATEGORIES = {
-    "OP": {"en": "Paper",             "ru": "Бумага",          "uk": "Папір",           "pl": "Papier"},
-    "OS": {"en": "Glass",             "ru": "Стекло",          "uk": "Скло",            "pl": "Szkło"},
-    "MT": {"en": "Metals & plastics", "ru": "Металл и пластик","uk": "Метал і пластик", "pl": "Metale i tworzywa"},
-    "BK": {"en": "Bio (kitchen)",     "ru": "Био (кухонные)",  "uk": "Біо (кухонні)",   "pl": "Bio (kuchenne)"},
-    "OZ": {"en": "Green waste",       "ru": "Зелёные отходы",  "uk": "Зелені відходи",  "pl": "Odpady zielone"},
-    "BG": {"en": "Bio (restaurant)",  "ru": "Био (ресторанное)","uk": "Біо (ресторанне)","pl": "Bio gastronomiczne"},
-    "ZM": {"en": "Mixed waste",       "ru": "Смешанные отходы","uk": "Змішані відходи", "pl": "Odpady zmieszane"},
-    "WG": {"en": "Bulky waste",       "ru": "Крупногабаритные","uk": "Великогабаритні", "pl": "Wielkogabarytowe"},
+    "OP": {"en": "Paper",   "ru": "Бумага",      "uk": "Папір",        "pl": "Papier"},
+    "OS": {"en": "Glass",   "ru": "Стекло",      "uk": "Скло",         "pl": "Szkło"},
+    "MT": {"en": "Plastic", "ru": "Пластик",     "uk": "Пластик",      "pl": "Plastik"},
+    "BK": {"en": "Bio",     "ru": "Био",         "uk": "Біо",          "pl": "Bio"},
+    "OZ": {"en": "Green",   "ru": "Зелёные",     "uk": "Зелені",       "pl": "Zielone"},
+    "BG": {"en": "Gastro",  "ru": "Гастро",      "uk": "Гастро",       "pl": "Gastro"},
+    "ZM": {"en": "Mixed",   "ru": "Смешанные",   "uk": "Змішані",      "pl": "Zmieszane"},
+    "WG": {"en": "Bulky",   "ru": "Габаритные",  "uk": "Габаритні",    "pl": "Gabaryty"},
 }
 
 STRINGS = {
@@ -69,6 +69,9 @@ STRINGS = {
         "pl": "👋 Wysyłam harmonogram wywozu odpadów dla TRAKT LUBELSKI 26.\n\n/next — harmonogram teraz\n/language — zmień język\n/settings — ustawienia powiadomień",
     },
     "settings_title": {"en": "⚙️ Settings", "ru": "⚙️ Настройки", "uk": "⚙️ Налаштування", "pl": "⚙️ Ustawienia"},
+    "btn_schedule": {"en": "📅 Schedule", "ru": "📅 График", "uk": "📅 Графік", "pl": "📅 Harmonogram"},
+    "btn_language": {"en": "🌐 Language", "ru": "🌐 Язык", "uk": "🌐 Мова", "pl": "🌐 Język"},
+    "btn_settings": {"en": "⚙️ Settings", "ru": "⚙️ Настройки", "uk": "⚙️ Налаштування", "pl": "⚙️ Ustawienia"},
     "opt_scope": {"en": "Show in a notification:", "ru": "Показывать в уведомлении:", "uk": "Показувати в сповіщенні:", "pl": "Pokaż w powiadomieniu:"},
     "scope_all": {"en": "All upcoming", "ru": "Весь график", "uk": "Весь графік", "pl": "Cały harmonogram"},
     "scope_due": {"en": "Only due", "ru": "Только ближайшее", "uk": "Тільки найближче", "pl": "Tylko nadchodzące"},
@@ -86,6 +89,23 @@ STRINGS = {
 def norm(lang):
     lang = (lang or "").strip().lower()[:2]
     return lang if lang in LANGS else DEFAULT
+
+
+# Map a tapped reply-keyboard button (in any language) to an action.
+_BUTTON_ACTIONS = {
+    "btn_schedule": "schedule",
+    "btn_language": "language",
+    "btn_settings": "settings",
+}
+
+
+def action_for(text):
+    """Return 'schedule' | 'language' | 'settings' if text matches a button label."""
+    text = (text or "").strip().lower()
+    for key, action in _BUTTON_ACTIONS.items():
+        if text in {v.lower() for v in STRINGS[key].values()}:
+            return action
+    return None
 
 
 def t(key, lang):
