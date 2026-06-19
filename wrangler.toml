@@ -3,6 +3,9 @@ main = "src/index.js"
 compatibility_date = "2024-11-06"
 workers_dev = true
 
+# Don't wipe dashboard-set vars/secrets (e.g. TG_BOT_TOKEN) on git deploys.
+keep_vars = true
+
 # Per-chat settings + daily-reminder dedup live here (set up in the dashboard).
 [[kv_namespaces]]
 binding = "STATE"
