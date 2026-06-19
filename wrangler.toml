@@ -1,0 +1,14 @@
+name = "trakt-lubelski"
+main = "src/index.js"
+compatibility_date = "2024-11-06"
+workers_dev = true
+
+# Per-chat settings + daily-reminder dedup live here (set up in the dashboard).
+[[kv_namespaces]]
+binding = "STATE"
+id = "89f82eb750934738a8506e8278719624"
+
+# Daily reminder. Cron is UTC; 18:00 and 19:00 UTC cover 20:00 Warsaw across DST
+# (the worker checks the local hour and sends once per day).
+[triggers]
+crons = ["0 18 * * *", "0 19 * * *"]
