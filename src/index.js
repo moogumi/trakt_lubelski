@@ -9,7 +9,8 @@
 const ADDRESS = "TRAKT LUBELSKI 26 04-870 Wawer";
 const ADDRESS_POINT_ID = "27088875";
 const DEFAULTS = { lang: "pl", scope: "due", days_before: 1 };
-const REMINDER_HOUR = 20; // Warsaw local hour
+const MORNING_HOUR = 9; // Warsaw — morning reminder
+const EVENING_HOUR = 19; // Warsaw — evening reminder
 const TZ = "Europe/Warsaw";
 const PID = "portalCKMjunkschedules_WAR_portalCKMjunkschedulesportlet_INSTANCE_o5AIb2mimbRJ";
 const OC_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow";
@@ -299,12 +300,17 @@ async function pushAll(env) {
   }
   return sent;
 }
+async function runSlot(env, date, slot) {
+  // send a slot's reminder at most once per day (deduped per slot)
+  const key = `meta:reminder:${slot}`;
+  if ((await env.STATE.get(key)) === date) return;
+  await pushAll(env);
+  await env.STATE.put(key, date);
+}
 async function maybeDaily(env) {
   const { date, hour } = warsawParts();
-  if (hour < REMINDER_HOUR) return;
-  if ((await env.STATE.get("meta:last_reminder_date")) === date) return;
-  await pushAll(env);
-  await env.STATE.put("meta:last_reminder_date", date);
+  if (hour >= MORNING_HOUR && hour < 12) await runSlot(env, date, "morning");
+  if (hour >= EVENING_HOUR) await runSlot(env, date, "evening");
 }
 
 // ===== worker entrypoints =====
@@ -320,28 +326,6 @@ export default {
       }
       ctx.waitUntil(handleUpdate(env, update).catch((e) => console.log("update error:", e)));
       return new Response("ok");
-    }
-    if (url.pathname === "/debug") {
-      const out = { hasToken: !!env.TG_BOT_TOKEN, tokenLen: (env.TG_BOT_TOKEN || "").length, hasState: !!env.STATE };
-      try {
-        await env.STATE.put("meta:debug", "1");
-        out.kv = (await env.STATE.get("meta:debug")) === "1" ? "ok" : "mismatch";
-      } catch (e) {
-        out.kv = "ERROR: " + e;
-      }
-      try {
-        const r = await fetch(`https://api.telegram.org/bot${env.TG_BOT_TOKEN}/getMe`);
-        out.getMe = await r.json();
-      } catch (e) {
-        out.getMe = "ERROR: " + e;
-      }
-      try {
-        const s = await fetchSchedule();
-        out.scheduleCount = s.length;
-      } catch (e) {
-        out.scheduleCount = "ERROR: " + e;
-      }
-      return new Response(JSON.stringify(out, null, 2), { headers: { "Content-Type": "application/json" } });
     }
     if (url.pathname === "/" || url.pathname === "/health") {
       return new Response("trakt-lubelski waste bot is up");
