@@ -19,8 +19,8 @@ const NO_DATE = "1900-01-01";
 // ===== i18n =====
 const LANGS = ["en", "ru", "uk", "pl", "be"];
 const DEFAULT_LANG = "pl";
-// Belarusian uses the historical white-red-white flag (⬜🟥⬜ — no emoji exists).
-const LANG_NAMES = { en: "English 🇬🇧", ru: "Русский 🇷🇺", uk: "Українська 🇺🇦", pl: "Polski 🇵🇱", be: "Беларуская ⬜🟥⬜" };
+// Belarusian: historical white-red-white shown as hearts (no WRW flag emoji exists).
+const LANG_NAMES = { en: "English 🇬🇧", ru: "Русский 🇷🇺", uk: "Українська 🇺🇦", pl: "Polski 🇵🇱", be: "Беларуская 🤍❤️🤍" };
 const EMOJI = { OP: "📄", OS: "🍾", MT: "🧴", BK: "🍎", OZ: "🌳", BG: "🍽️", ZM: "🗑️", WG: "🛋️" };
 const CATEGORIES = {
   OP: { en: "Paper", ru: "Бумага", uk: "Папір", pl: "Papier", be: "Папера" },
