@@ -17,43 +17,45 @@ const OC_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow";
 const NO_DATE = "1900-01-01";
 
 // ===== i18n =====
-const LANGS = ["en", "ru", "uk", "pl"];
+const LANGS = ["en", "ru", "uk", "pl", "be"];
 const DEFAULT_LANG = "pl";
-const LANG_NAMES = { en: "English 🇬🇧", ru: "Русский 🇷🇺", uk: "Українська 🇺🇦", pl: "Polski 🇵🇱" };
+// Belarusian uses the historical white-red-white flag (⬜🟥⬜ — no emoji exists).
+const LANG_NAMES = { en: "English 🇬🇧", ru: "Русский 🇷🇺", uk: "Українська 🇺🇦", pl: "Polski 🇵🇱", be: "Беларуская ⬜🟥⬜" };
 const EMOJI = { OP: "📄", OS: "🍾", MT: "🧴", BK: "🍎", OZ: "🌳", BG: "🍽️", ZM: "🗑️", WG: "🛋️" };
 const CATEGORIES = {
-  OP: { en: "Paper", ru: "Бумага", uk: "Папір", pl: "Papier" },
-  OS: { en: "Glass", ru: "Стекло", uk: "Скло", pl: "Szkło" },
-  MT: { en: "Plastic", ru: "Пластик", uk: "Пластик", pl: "Plastik" },
-  BK: { en: "Bio", ru: "Био", uk: "Біо", pl: "Bio" },
-  OZ: { en: "Green", ru: "Зелёные", uk: "Зелені", pl: "Zielone" },
-  BG: { en: "Gastro", ru: "Гастро", uk: "Гастро", pl: "Gastro" },
-  ZM: { en: "Mixed", ru: "Смешанные", uk: "Змішані", pl: "Zmieszane" },
-  WG: { en: "Bulky", ru: "Габаритные", uk: "Габаритні", pl: "Gabaryty" },
+  OP: { en: "Paper", ru: "Бумага", uk: "Папір", pl: "Papier", be: "Папера" },
+  OS: { en: "Glass", ru: "Стекло", uk: "Скло", pl: "Szkło", be: "Шкло" },
+  MT: { en: "Plastic", ru: "Пластик", uk: "Пластик", pl: "Plastik", be: "Пластык" },
+  BK: { en: "Bio", ru: "Био", uk: "Біо", pl: "Bio", be: "Біа" },
+  OZ: { en: "Green", ru: "Зелёные", uk: "Зелені", pl: "Zielone", be: "Зялёныя" },
+  BG: { en: "Gastro", ru: "Гастро", uk: "Гастро", pl: "Gastro", be: "Гастра" },
+  ZM: { en: "Mixed", ru: "Смешанные", uk: "Змішані", pl: "Zmieszane", be: "Змешаныя" },
+  WG: { en: "Bulky", ru: "Габаритные", uk: "Габаритні", pl: "Gabaryty", be: "Габарыты" },
 };
 const STRINGS = {
-  title: { en: "Waste collection", ru: "Вывоз мусора", uk: "Вивіз сміття", pl: "Wywóz odpadów" },
-  no_data: { en: "No schedule data.", ru: "Нет данных в графике.", uk: "Немає даних у графіку.", pl: "Brak danych w harmonogramie." },
-  today: { en: "today", ru: "сегодня", uk: "сьогодні", pl: "dzisiaj" },
-  tomorrow: { en: "tomorrow", ru: "завтра", uk: "завтра", pl: "jutro" },
-  passed: { en: "passed", ru: "прошло", uk: "минуло", pl: "minęło" },
-  choose_lang: { en: "🌐 Choose language:", ru: "🌐 Выберите язык:", uk: "🌐 Оберіть мову:", pl: "🌐 Wybierz język:" },
-  lang_set: { en: "✅ Language: English", ru: "✅ Язык: Русский", uk: "✅ Мова: Українська", pl: "✅ Język: Polski" },
+  title: { en: "Waste collection", ru: "Вывоз мусора", uk: "Вивіз сміття", pl: "Wywóz odpadów", be: "Вываз смецця" },
+  no_data: { en: "No schedule data.", ru: "Нет данных в графике.", uk: "Немає даних у графіку.", pl: "Brak danych w harmonogramie.", be: "Няма дадзеных у графіку." },
+  today: { en: "today", ru: "сегодня", uk: "сьогодні", pl: "dzisiaj", be: "сёння" },
+  tomorrow: { en: "tomorrow", ru: "завтра", uk: "завтра", pl: "jutro", be: "заўтра" },
+  passed: { en: "passed", ru: "прошло", uk: "минуло", pl: "minęło", be: "мінула" },
+  choose_lang: { en: "🌐 Choose language:", ru: "🌐 Выберите язык:", uk: "🌐 Оберіть мову:", pl: "🌐 Wybierz język:", be: "🌐 Абярыце мову:" },
+  lang_set: { en: "✅ Language: English", ru: "✅ Язык: Русский", uk: "✅ Мова: Українська", pl: "✅ Język: Polski", be: "✅ Мова: Беларуская" },
   welcome: {
     en: "👋 I send the waste-collection schedule for TRAKT LUBELSKI 26.\n\n/next — schedule now\n/language — change language\n/settings — notification settings",
     ru: "👋 Присылаю график вывоза мусора для TRAKT LUBELSKI 26.\n\n/next — график сейчас\n/language — сменить язык\n/settings — настройки уведомлений",
     uk: "👋 Надсилаю графік вивозу сміття для TRAKT LUBELSKI 26.\n\n/next — графік зараз\n/language — змінити мову\n/settings — налаштування сповіщень",
     pl: "👋 Wysyłam harmonogram wywozu odpadów dla TRAKT LUBELSKI 26.\n\n/next — harmonogram teraz\n/language — zmień język\n/settings — ustawienia powiadomień",
+    be: "👋 Дасылаю графік вывазу смецця для TRAKT LUBELSKI 26.\n\n/next — графік зараз\n/language — змяніць мову\n/settings — налады апавяшчэнняў",
   },
-  settings_title: { en: "⚙️ Settings", ru: "⚙️ Настройки", uk: "⚙️ Налаштування", pl: "⚙️ Ustawienia" },
-  opt_scope: { en: "Show in a notification:", ru: "Показывать в уведомлении:", uk: "Показувати в сповіщенні:", pl: "Pokaż w powiadomieniu:" },
-  scope_all: { en: "All upcoming", ru: "Весь график", uk: "Весь графік", pl: "Cały harmonogram" },
-  scope_due: { en: "Only due", ru: "Только ближайшее", uk: "Тільки найближче", pl: "Tylko nadchodzące" },
-  opt_days: { en: "Notify days before:", ru: "Уведомлять за дней:", uk: "Сповіщати за днів:", pl: "Powiadom dni wcześniej:" },
-  settings_saved: { en: "✅ Settings updated", ru: "✅ Настройки обновлены", uk: "✅ Налаштування оновлено", pl: "✅ Ustawienia zaktualizowane" },
-  btn_schedule: { en: "📅 Schedule", ru: "📅 График", uk: "📅 Графік", pl: "📅 Harmonogram" },
-  btn_language: { en: "🌐 Language", ru: "🌐 Язык", uk: "🌐 Мова", pl: "🌐 Język" },
-  btn_settings: { en: "⚙️ Settings", ru: "⚙️ Настройки", uk: "⚙️ Налаштування", pl: "⚙️ Ustawienia" },
+  settings_title: { en: "⚙️ Settings", ru: "⚙️ Настройки", uk: "⚙️ Налаштування", pl: "⚙️ Ustawienia", be: "⚙️ Налады" },
+  opt_scope: { en: "Show in a notification:", ru: "Показывать в уведомлении:", uk: "Показувати в сповіщенні:", pl: "Pokaż w powiadomieniu:", be: "Паказваць у апавяшчэнні:" },
+  scope_all: { en: "All upcoming", ru: "Весь график", uk: "Весь графік", pl: "Cały harmonogram", be: "Увесь графік" },
+  scope_due: { en: "Only due", ru: "Только ближайшее", uk: "Тільки найближче", pl: "Tylko nadchodzące", be: "Толькі бліжэйшае" },
+  opt_days: { en: "Notify days before:", ru: "Уведомлять за дней:", uk: "Сповіщати за днів:", pl: "Powiadom dni wcześniej:", be: "Апавяшчаць за дзён:" },
+  settings_saved: { en: "✅ Settings updated", ru: "✅ Настройки обновлены", uk: "✅ Налаштування оновлено", pl: "✅ Ustawienia zaktualizowane", be: "✅ Налады абноўлены" },
+  btn_schedule: { en: "📅 Schedule", ru: "📅 График", uk: "📅 Графік", pl: "📅 Harmonogram", be: "📅 Графік" },
+  btn_language: { en: "🌐 Language", ru: "🌐 Язык", uk: "🌐 Мова", pl: "🌐 Język", be: "🌐 Мова" },
+  btn_settings: { en: "⚙️ Settings", ru: "⚙️ Настройки", uk: "⚙️ Налаштування", pl: "⚙️ Ustawienia", be: "⚙️ Налады" },
 };
 const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -86,6 +88,7 @@ function when(days, lang) {
   const n = days;
   if (lang === "ru") return `через ${n} ${pluralRu(n, "день", "дня", "дней")}`;
   if (lang === "uk") return `через ${n} ${pluralRu(n, "день", "дні", "днів")}`;
+  if (lang === "be") return `праз ${n} ${pluralRu(n, "дзень", "дні", "дзён")}`;
   if (lang === "pl") return `za ${n} dni`;
   return `in ${n} days`;
 }
@@ -211,7 +214,9 @@ function mainKeyboard(lang) {
 }
 function langKeyboard() {
   const b = LANGS.map((c) => ({ text: LANG_NAMES[c], callback_data: "setlang:" + c }));
-  return { inline_keyboard: [b.slice(0, 2), b.slice(2)] };
+  const rows = [];
+  for (let i = 0; i < b.length; i += 2) rows.push(b.slice(i, i + 2));
+  return { inline_keyboard: rows };
 }
 function settingsKeyboard(lang, scope, days) {
   const mark = (txt, on) => (on ? "✅ " : "") + txt;
