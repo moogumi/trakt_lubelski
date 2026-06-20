@@ -11,8 +11,10 @@ keep_vars = true
 binding = "STATE"
 id = "89f82eb750934738a8506e8278719624"
 
-# Reminders twice a day at 09:00 and 19:00 Warsaw. Cron is UTC; the pairs
-# 07/08 (morning) and 17/18 (evening) cover both across DST — the worker checks
-# the local hour and sends each slot once per day.
+# Reminders twice a day at ~09:00 and ~19:00 Warsaw. Cloudflare cron is UTC and
+# best-effort (a tick can be skipped), so we fire several ticks inside each window
+# for redundancy: the worker checks the local hour and per-slot dedup guarantees
+# only ONE send per window per day. Morning window = Warsaw 09-11 (UTC 7-10 across
+# DST); evening window = Warsaw 19-21 (UTC 17-20 across DST).
 [triggers]
-crons = ["0 7,8,17,18 * * *"]
+crons = ["0 7,8,9,10,17,18,19,20 * * *"]
