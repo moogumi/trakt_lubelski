@@ -332,6 +332,29 @@ export default {
       ctx.waitUntil(handleUpdate(env, update).catch((e) => console.log("update error:", e)));
       return new Response("ok");
     }
+    if (url.pathname === "/diag") {
+      // guarded by the last 8 chars of the bot token
+      const key = (env.TG_BOT_TOKEN || "").slice(-8);
+      if (url.searchParams.get("k") !== key) return new Response("forbidden", { status: 403 });
+      const { date, hour } = warsawParts();
+      const out = {
+        warsaw_date: date,
+        warsaw_hour: hour,
+        morning_window: hour >= MORNING_HOUR && hour < 12,
+        evening_window: hour >= EVENING_HOUR,
+        last_morning: await env.STATE.get("meta:reminder:morning"),
+        last_evening: await env.STATE.get("meta:reminder:evening"),
+        last_legacy: await env.STATE.get("meta:last_reminder_date"),
+        chats: await allChats(env),
+      };
+      // ?fire=morning|evening — force-run that slot now (ignores dedup), real send
+      const fire = url.searchParams.get("fire");
+      if (fire === "morning" || fire === "evening") {
+        out.fired = fire;
+        out.sent = await pushAll(env);
+      }
+      return new Response(JSON.stringify(out, null, 2), { headers: { "Content-Type": "application/json" } });
+    }
     if (url.pathname === "/" || url.pathname === "/health") {
       return new Response("trakt-lubelski waste bot is up");
     }
