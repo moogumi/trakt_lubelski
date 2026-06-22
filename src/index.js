@@ -212,10 +212,13 @@ function mainKeyboard(lang) {
   };
 }
 function langKeyboard() {
-  const b = LANGS.map((c) => ({ text: LANG_NAMES[c], callback_data: "setlang:" + c }));
-  const rows = [];
-  for (let i = 0; i < b.length; i += 2) rows.push(b.slice(i, i + 2));
-  return { inline_keyboard: rows };
+  const btn = (c) => ({ text: LANG_NAMES[c], callback_data: "setlang:" + c });
+  return {
+    inline_keyboard: [
+      [btn("pl"), btn("en"), btn("ru")],
+      [btn("uk"), btn("be")],
+    ],
+  };
 }
 function settingsKeyboard(lang, scope, days) {
   const mark = (txt, on) => (on ? "✅ " : "") + txt;
