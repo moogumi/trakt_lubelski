@@ -338,6 +338,7 @@ export default {
       // external heartbeat (cron-job.org) — reliable backup for Cloudflare's cron.
       // maybeDaily decides whether to actually send (time window + per-day dedup).
       if (url.searchParams.get("k") !== (env.TG_BOT_TOKEN || "").slice(-8)) return new Response("forbidden", { status: 403 });
+      await env.STATE.put("meta:last_ping", new Date().toISOString());
       ctx.waitUntil(maybeDaily(env).catch((e) => console.log("cron error:", e)));
       return new Response("ok");
     }
@@ -353,7 +354,7 @@ export default {
         evening_window: hour >= EVENING_HOUR,
         last_morning: await env.STATE.get("meta:reminder:morning"),
         last_evening: await env.STATE.get("meta:reminder:evening"),
-        last_legacy: await env.STATE.get("meta:last_reminder_date"),
+        last_ping: await env.STATE.get("meta:last_ping"),
         chats: await allChats(env),
       };
       // ?fire=morning|evening — force-run that slot now (ignores dedup), real send
