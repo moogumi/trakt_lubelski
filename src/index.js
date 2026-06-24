@@ -334,6 +334,13 @@ export default {
       ctx.waitUntil(handleUpdate(env, update).catch((e) => console.log("update error:", e)));
       return new Response("ok");
     }
+    if (url.pathname === "/cron") {
+      // external heartbeat (cron-job.org) — reliable backup for Cloudflare's cron.
+      // maybeDaily decides whether to actually send (time window + per-day dedup).
+      if (url.searchParams.get("k") !== (env.TG_BOT_TOKEN || "").slice(-8)) return new Response("forbidden", { status: 403 });
+      ctx.waitUntil(maybeDaily(env).catch((e) => console.log("cron error:", e)));
+      return new Response("ok");
+    }
     if (url.pathname === "/diag") {
       // guarded by the last 8 chars of the bot token
       const key = (env.TG_BOT_TOKEN || "").slice(-8);
